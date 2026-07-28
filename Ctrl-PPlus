@@ -1,0 +1,465 @@
+-- Services
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+
+local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+
+-- Overwrite any existing instance to prevent duplicates
+if PlayerGui:FindFirstChild("SleekMasterMenuGui") then
+	PlayerGui.SleekMasterMenuGui:Destroy()
+end
+
+-- Create UI ScreenGui
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "SleekMasterMenuGui"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent = PlayerGui
+
+-- Main Menu Frame
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Size = UDim2.new(0, 200, 0, 160)
+MainFrame.Position = UDim2.new(0.05, 0, 0.1, 0)
+MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+MainFrame.BorderSizePixel = 0
+MainFrame.Parent = ScreenGui
+
+local MainCorner = Instance.new("UICorner")
+MainCorner.CornerRadius = UDim.new(0, 10)
+MainCorner.Parent = MainFrame
+
+-- Top Bar / Header for Dragging
+local TopBar = Instance.new("Frame")
+TopBar.Name = "TopBar"
+TopBar.Size = UDim2.new(1, 0, 0, 35)
+TopBar.BackgroundColor3 = Color3.fromRGB(35, 35, 42)
+TopBar.BorderSizePixel = 0
+TopBar.Parent = MainFrame
+
+local TopBarCorner = Instance.new("UICorner")
+TopBarCorner.CornerRadius = UDim.new(0, 10)
+TopBarCorner.Parent = TopBar
+
+local TopBarCover = Instance.new("Frame")
+TopBarCover.Size = UDim2.new(1, 0, 0, 10)
+TopBarCover.Position = UDim2.new(0, 0, 1, -10)
+TopBarCover.BackgroundColor3 = Color3.fromRGB(35, 35, 42)
+TopBarCover.BorderSizePixel = 0
+TopBarCover.Parent = TopBar
+
+-- Title Label
+local TitleLabel = Instance.new("TextLabel")
+TitleLabel.Size = UDim2.new(1, -70, 1, 0)
+TitleLabel.Position = UDim2.new(0, 10, 0, 0)
+TitleLabel.BackgroundTransparency = 1
+TitleLabel.Text = "Control Menu"
+TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+TitleLabel.TextSize = 14
+TitleLabel.Font = Enum.Font.GothamBold
+TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+TitleLabel.Parent = TopBar
+
+-- Minimize Button (-)
+local MinimizeButton = Instance.new("TextButton")
+MinimizeButton.Size = UDim2.new(0, 25, 0, 25)
+MinimizeButton.Position = UDim2.new(1, -60, 0.5, -12.5)
+MinimizeButton.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+MinimizeButton.Text = "-"
+MinimizeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+MinimizeButton.TextSize = 16
+MinimizeButton.Font = Enum.Font.GothamBold
+MinimizeButton.Parent = TopBar
+
+local MinCorner = Instance.new("UICorner")
+MinCorner.CornerRadius = UDim.new(0, 6)
+MinCorner.Parent = MinimizeButton
+
+-- Close Button (X)
+local CloseButton = Instance.new("TextButton")
+CloseButton.Size = UDim2.new(0, 25, 0, 25)
+CloseButton.Position = UDim2.new(1, -30, 0.5, -12.5)
+CloseButton.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
+CloseButton.Text = "X"
+CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseButton.TextSize = 12
+CloseButton.Font = Enum.Font.GothamBold
+CloseButton.Parent = TopBar
+
+local CloseCorner = Instance.new("UICorner")
+CloseCorner.CornerRadius = UDim.new(0, 6)
+CloseCorner.Parent = CloseButton
+
+-- Content Container Frame
+local ContentFrame = Instance.new("Frame")
+ContentFrame.Size = UDim2.new(1, 0, 1, -35)
+ContentFrame.Position = UDim2.new(0, 0, 0, 35)
+ContentFrame.BackgroundTransparency = 1
+ContentFrame.Parent = MainFrame
+
+-- ESP Toggle Button
+local ESPButton = Instance.new("TextButton")
+ESPButton.Size = UDim2.new(1, -20, 0, 45)
+ESPButton.Position = UDim2.new(0, 10, 0, 15)
+ESPButton.BackgroundColor3 = Color3.fromRGB(40, 40, 48)
+ESPButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+ESPButton.TextSize = 14
+ESPButton.Font = Enum.Font.GothamSemibold
+ESPButton.Text = "ESP: OFF"
+ESPButton.Parent = ContentFrame
+
+local ESPCorner = Instance.new("UICorner")
+ESPCorner.CornerRadius = UDim.new(0, 8)
+ESPCorner.Parent = ESPButton
+
+-- Inventory Viewer Toggle Button
+local InvButton = Instance.new("TextButton")
+InvButton.Size = UDim2.new(1, -20, 0, 45)
+InvButton.Position = UDim2.new(0, 10, 0, 70)
+InvButton.BackgroundColor3 = Color3.fromRGB(40, 40, 48)
+InvButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+InvButton.TextSize = 14
+InvButton.Font = Enum.Font.GothamSemibold
+InvButton.Text = "View Inventories: OFF"
+InvButton.Parent = ContentFrame
+
+local InvCorner = Instance.new("UICorner")
+InvCorner.CornerRadius = UDim.new(0, 8)
+InvCorner.Parent = InvButton
+
+-- Draggable Functionality via TopBar
+local dragging, dragStart, startPos
+
+TopBar.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		dragging = true
+		dragStart = input.Position
+		startPos = MainFrame.Position
+		
+		input.Changed:Connect(function()
+			if input.UserInputState == Enum.UserInputState.End then
+				dragging = false
+			end
+		end)
+	end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+	if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+		local delta = input.Position - dragStart
+		MainFrame.Position = UDim2.new(
+			startPos.X.Scale,
+			startPos.X.Offset + delta.X,
+			startPos.Y.Scale,
+			startPos.Y.Offset + delta.Y
+		)
+	end
+end)
+
+-- Minimize & Maximize Logic
+local minimized = false
+MinimizeButton.MouseButton1Click:Connect(function()
+	minimized = not minimized
+	if minimized then
+		ContentFrame.Visible = false
+		MainFrame.Size = UDim2.new(0, 200, 0, 35)
+		MinimizeButton.Text = "+"
+	else
+		ContentFrame.Visible = true
+		MainFrame.Size = UDim2.new(0, 200, 0, 160)
+		MinimizeButton.Text = "-"
+	end
+end)
+
+CloseButton.MouseButton1Click:Connect(function()
+	ScreenGui:Destroy()
+end)
+
+----------------------------------------------------
+-- FEATURE LOGIC: ESP & INVENTORY VIEWER
+----------------------------------------------------
+
+-- ESP Variables & Functions
+local espEnabled = false
+local activeHighlights = {}
+
+local function getCharacterColor(character)
+	local part = character:FindFirstChild("Torso") or character:FindFirstChild("UpperTorso") or character:FindFirstChild("HumanoidRootPart")
+	if part then
+		return part.Color
+	end
+	return Color3.fromRGB(255, 255, 255)
+end
+
+local function addESP(player)
+	if player == LocalPlayer then return end
+	
+	local function onCharacterAdded(character)
+		if not espEnabled then return end
+		
+		if activeHighlights[player] then
+			for _, h in ipairs(activeHighlights[player]) do
+				h:Destroy()
+			end
+		end
+		
+		local highlights = {}
+		
+		local outerHighlight = Instance.new("Highlight")
+		outerHighlight.Name = "ESPGlowOuter"
+		outerHighlight.Adornee = character
+		outerHighlight.Parent = character
+		outerHighlight.FillTransparency = 0.85
+		outerHighlight.OutlineTransparency = 0
+		
+		local innerHighlight = Instance.new("Highlight")
+		innerHighlight.Name = "ESPGlowInner"
+		innerHighlight.Adornee = character
+		innerHighlight.Parent = character
+		innerHighlight.FillTransparency = 1
+		innerHighlight.OutlineTransparency = 0
+		
+		table.insert(highlights, outerHighlight)
+		table.insert(highlights, innerHighlight)
+		
+		task.spawn(function()
+			task.wait(0.5)
+			if character and outerHighlight.Parent and innerHighlight.Parent then
+				local charColor = getCharacterColor(character)
+				outerHighlight.FillColor = charColor
+				outerHighlight.OutlineColor = charColor
+				innerHighlight.OutlineColor = charColor
+			end
+		end)
+		
+		activeHighlights[player] = highlights
+	end
+	
+	if player.Character then
+		onCharacterAdded(player.Character)
+	end
+	player.CharacterAdded:Connect(onCharacterAdded)
+end
+
+local function removeESP(player)
+	if activeHighlights[player] then
+		for _, h in ipairs(activeHighlights[player]) do
+			h:Destroy()
+		end
+		activeHighlights[player] = nil
+	end
+end
+
+ESPButton.MouseButton1Click:Connect(function()
+	espEnabled = not espEnabled
+	if espEnabled then
+		ESPButton.Text = "ESP: ON"
+		ESPButton.BackgroundColor3 = Color3.fromRGB(45, 120, 70)
+		for _, player in ipairs(Players:GetPlayers()) do
+			addESP(player)
+		end
+	else
+		ESPButton.Text = "ESP: OFF"
+		ESPButton.BackgroundColor3 = Color3.fromRGB(40, 40, 48)
+		for _, player in ipairs(Players:GetPlayers()) do
+			removeESP(player)
+		end
+	end
+end)
+
+-- Inventory Viewer Variables & Functions
+local viewerEnabled = false
+local activeDisplays = {}
+
+local function getPlayerInventory(player)
+	local items = {}
+	for i = 1, 10 do 
+		items[i] = {name = "", image = ""} 
+	end
+	
+	local character = player.Character
+	local backpack = player:FindFirstChild("Backpack")
+	local collectedTools = {}
+	
+	if character then
+		for _, child in ipairs(character:GetChildren()) do
+			if child:IsA("Tool") then table.insert(collectedTools, child) end
+		end
+	end
+	if backpack then
+		for _, child in ipairs(backpack:GetChildren()) do
+			if child:IsA("Tool") then table.insert(collectedTools, child) end
+		end
+	end
+	
+	for i, tool in ipairs(collectedTools) do
+		if i <= 10 then
+			local imgId = ""
+			if tool.TextureId and tool.TextureId ~= "" then
+				imgId = tool.TextureId
+			end
+			items[i] = {name = tool.Name, image = imgId}
+		end
+	end
+	return items
+end
+
+local function createInventoryBillboard(player)
+	if player == LocalPlayer then return end
+	
+	local function onCharacterAdded(character)
+		if not viewerEnabled then return end
+		
+		if activeDisplays[player] then
+			activeDisplays[player]:Destroy()
+		end
+		
+		local head = character:WaitForChild("Head", 5)
+		if not head then return end
+		
+		local billboard = Instance.new("BillboardGui")
+		billboard.Name = "InventoryBillboard"
+		billboard.Adornee = head
+		billboard.Size = UDim2.new(0, 320, 0, 45)
+		billboard.StudsOffset = Vector3.new(0, 3, 0)
+		billboard.AlwaysOnTop = true
+		billboard.Parent = character
+		
+		local container = Instance.new("Frame")
+		container.Size = UDim2.new(1, 0, 1, 0)
+		container.BackgroundTransparency = 1
+		container.Parent = billboard
+		
+		local listLayout = Instance.new("UIListLayout")
+		listLayout.FillDirection = Enum.FillDirection.Horizontal
+		listLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+		listLayout.SortOrder = Enum.SortOrder.LayoutOrder
+		listLayout.Padding = UDim.new(0, 2)
+		listLayout.Parent = container
+		
+		local slotData = {}
+		for i = 1, 10 do
+			local slotNum = (i % 10)
+			local slotFrame = Instance.new("Frame")
+			slotFrame.Name = "Slot" .. i
+			slotFrame.Size = UDim2.new(0, 30, 0, 35)
+			slotFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+			slotFrame.BackgroundTransparency = 0.3
+			slotFrame.BorderColor3 = Color3.fromRGB(60, 60, 65)
+			slotFrame.LayoutOrder = i
+			slotFrame.Parent = container
+			
+			-- Slot Number label (top left)
+			local numLabel = Instance.new("TextLabel")
+			numLabel.Size = UDim2.new(1, -2, 0, 12)
+			numLabel.Position = UDim2.new(0, 2, 0, 1)
+			numLabel.BackgroundTransparency = 1
+			numLabel.Text = tostring(slotNum)
+			numLabel.TextColor3 = Color3.fromRGB(240, 240, 240)
+			numLabel.TextSize = 10
+			numLabel.Font = Enum.Font.GothamBold
+			numLabel.TextXAlignment = Enum.TextXAlignment.Left
+			numLabel.Parent = slotFrame
+			
+			-- Item Image Icon (fills the frame)
+			local itemImage = Instance.new("ImageLabel")
+			itemImage.Name = "ItemImage"
+			itemImage.Size = UDim2.new(1, 0, 1, 0)
+			itemImage.BackgroundTransparency = 1
+			itemImage.Image = ""
+			itemImage.Visible = false
+			itemImage.Parent = slotFrame
+			
+			-- Item Name label (positioned at the bottom if image exists, or middle if no image)
+			local itemLabel = Instance.new("TextLabel")
+			itemLabel.Name = "ItemLabel"
+			itemLabel.Size = UDim2.new(1, 0, 0, 16)
+			itemLabel.Position = UDim2.new(0, 0, 1, -16)
+			itemLabel.BackgroundTransparency = 1
+			itemLabel.Text = ""
+			itemLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+			itemLabel.TextSize = 9
+			itemLabel.Font = Enum.Font.Gotham
+			itemLabel.TextWrapped = true
+			itemLabel.Parent = slotFrame
+			
+			slotData[i] = {label = itemLabel, image = itemImage}
+		end
+		
+		local connection
+		connection = RunService.RenderStepped:Connect(function()
+			if not character or not character.Parent or not viewerEnabled then
+				connection:Disconnect()
+				return
+			end
+			local inv = getPlayerInventory(player)
+			for i = 1, 10 do
+				local data = slotData[i]
+				local itemInfo = inv[i]
+				if data then
+					if itemInfo.image ~= "" then
+						-- Image found: display image, place text at the bottom
+						data.image.Image = itemInfo.image
+						data.image.Visible = true
+						data.label.Text = itemInfo.name
+						data.label.Size = UDim2.new(1, 0, 0, 14)
+						data.label.Position = UDim2.new(0, 0, 1, -14)
+					elseif itemInfo.name ~= "" then
+						-- No image: hide image, center the text item name
+						data.image.Visible = false
+						data.label.Text = itemInfo.name
+						data.label.Size = UDim2.new(1, 0, 1, -12)
+						data.label.Position = UDim2.new(0, 0, 0, 12)
+					else
+						-- Empty slot
+						data.image.Visible = false
+						data.label.Text = ""
+					end
+				end
+			end
+		end)
+		
+		activeDisplays[player] = billboard
+	end
+	
+	if player.Character then
+		onCharacterAdded(player.Character)
+	end
+	player.CharacterAdded:Connect(onCharacterAdded)
+end
+
+local function removeInventoryBillboard(player)
+	if activeDisplays[player] then
+		activeDisplays[player]:Destroy()
+		activeDisplays[player] = nil
+	end
+end
+
+InvButton.MouseButton1Click:Connect(function()
+	viewerEnabled = not viewerEnabled
+	if viewerEnabled then
+		InvButton.Text = "View Inventories: ON"
+		InvButton.BackgroundColor3 = Color3.fromRGB(45, 120, 70)
+		for _, player in ipairs(Players:GetPlayers()) do
+			createInventoryBillboard(player)
+		end
+	else
+		InvButton.Text = "View Inventories: OFF"
+		InvButton.BackgroundColor3 = Color3.fromRGB(40, 40, 48)
+		for _, player in ipairs(Players:GetPlayers()) do
+			removeInventoryBillboard(player)
+		end
+	end
+end)
+
+-- Global Player Connections
+Players.PlayerAdded:Connect(function(player)
+	if espEnabled then addESP(player) end
+	if viewerEnabled then createInventoryBillboard(player) end
+end)
+
+Players.PlayerRemoving:Connect(function(player)
+	removeESP(player)
+	removeInventoryBillboard(player)
+end)
