@@ -2,6 +2,7 @@
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
+local Mouse = Players.LocalPlayer:GetMouse()
 
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
@@ -20,7 +21,7 @@ ScreenGui.Parent = PlayerGui
 -- Main Menu Frame
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
-MainFrame.Size = UDim2.new(0, 200, 0, 160)
+MainFrame.Size = UDim2.new(0, 200, 0, 210)
 MainFrame.Position = UDim2.new(0.05, 0, 0.1, 0)
 MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
 MainFrame.BorderSizePixel = 0
@@ -100,8 +101,8 @@ ContentFrame.Parent = MainFrame
 
 -- ESP Toggle Button
 local ESPButton = Instance.new("TextButton")
-ESPButton.Size = UDim2.new(1, -20, 0, 45)
-ESPButton.Position = UDim2.new(0, 10, 0, 15)
+ESPButton.Size = UDim2.new(1, -20, 0, 40)
+ESPButton.Position = UDim2.new(0, 10, 0, 12)
 ESPButton.BackgroundColor3 = Color3.fromRGB(40, 40, 48)
 ESPButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 ESPButton.TextSize = 14
@@ -115,8 +116,8 @@ ESPCorner.Parent = ESPButton
 
 -- Inventory Viewer Toggle Button
 local InvButton = Instance.new("TextButton")
-InvButton.Size = UDim2.new(1, -20, 0, 45)
-InvButton.Position = UDim2.new(0, 10, 0, 70)
+InvButton.Size = UDim2.new(1, -20, 0, 40)
+InvButton.Position = UDim2.new(0, 10, 0, 62)
 InvButton.BackgroundColor3 = Color3.fromRGB(40, 40, 48)
 InvButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 InvButton.TextSize = 14
@@ -127,6 +128,21 @@ InvButton.Parent = ContentFrame
 local InvCorner = Instance.new("UICorner")
 InvCorner.CornerRadius = UDim.new(0, 8)
 InvCorner.Parent = InvButton
+
+-- Infinity Coins Toggle Button
+local CoinsButton = Instance.new("TextButton")
+CoinsButton.Size = UDim2.new(1, -20, 0, 40)
+CoinsButton.Position = UDim2.new(0, 10, 0, 112)
+CoinsButton.BackgroundColor3 = Color3.fromRGB(40, 40, 48)
+CoinsButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+CoinsButton.TextSize = 14
+CoinsButton.Font = Enum.Font.GothamSemibold
+CoinsButton.Text = "∞ Coins: OFF"
+CoinsButton.Parent = ContentFrame
+
+local CoinsCorner = Instance.new("UICorner")
+CoinsCorner.CornerRadius = UDim.new(0, 8)
+CoinsCorner.Parent = CoinsButton
 
 -- Draggable Functionality via TopBar
 local dragging, dragStart, startPos
@@ -167,7 +183,7 @@ MinimizeButton.MouseButton1Click:Connect(function()
 		MinimizeButton.Text = "+"
 	else
 		ContentFrame.Visible = true
-		MainFrame.Size = UDim2.new(0, 200, 0, 160)
+		MainFrame.Size = UDim2.new(0, 200, 0, 210)
 		MinimizeButton.Text = "-"
 	end
 end)
@@ -177,7 +193,7 @@ CloseButton.MouseButton1Click:Connect(function()
 end)
 
 ----------------------------------------------------
--- FEATURE LOGIC: ESP & INVENTORY VIEWER
+-- FEATURE LOGIC: ESP & INVENTORY & ∞ COINS
 ----------------------------------------------------
 
 -- ESP Variables & Functions
@@ -350,7 +366,6 @@ local function createInventoryBillboard(player)
 			slotFrame.LayoutOrder = i
 			slotFrame.Parent = container
 			
-			-- Slot Number label (top left)
 			local numLabel = Instance.new("TextLabel")
 			numLabel.Size = UDim2.new(1, -2, 0, 12)
 			numLabel.Position = UDim2.new(0, 2, 0, 1)
@@ -362,7 +377,6 @@ local function createInventoryBillboard(player)
 			numLabel.TextXAlignment = Enum.TextXAlignment.Left
 			numLabel.Parent = slotFrame
 			
-			-- Item Image Icon (fills the frame)
 			local itemImage = Instance.new("ImageLabel")
 			itemImage.Name = "ItemImage"
 			itemImage.Size = UDim2.new(1, 0, 1, 0)
@@ -371,7 +385,6 @@ local function createInventoryBillboard(player)
 			itemImage.Visible = false
 			itemImage.Parent = slotFrame
 			
-			-- Item Name label (positioned at the bottom if image exists, or middle if no image)
 			local itemLabel = Instance.new("TextLabel")
 			itemLabel.Name = "ItemLabel"
 			itemLabel.Size = UDim2.new(1, 0, 0, 16)
@@ -399,20 +412,17 @@ local function createInventoryBillboard(player)
 				local itemInfo = inv[i]
 				if data then
 					if itemInfo.image ~= "" then
-						-- Image found: display image, place text at the bottom
 						data.image.Image = itemInfo.image
 						data.image.Visible = true
 						data.label.Text = itemInfo.name
 						data.label.Size = UDim2.new(1, 0, 0, 14)
 						data.label.Position = UDim2.new(0, 0, 1, -14)
 					elseif itemInfo.name ~= "" then
-						-- No image: hide image, center the text item name
 						data.image.Visible = false
 						data.label.Text = itemInfo.name
 						data.label.Size = UDim2.new(1, 0, 1, -12)
 						data.label.Position = UDim2.new(0, 0, 0, 12)
 					else
-						-- Empty slot
 						data.image.Visible = false
 						data.label.Text = ""
 					end
@@ -449,6 +459,74 @@ InvButton.MouseButton1Click:Connect(function()
 		InvButton.BackgroundColor3 = Color3.fromRGB(40, 40, 48)
 		for _, player in ipairs(Players:GetPlayers()) do
 			removeInventoryBillboard(player)
+		end
+	end
+end)
+
+-- ∞ Coins Logic (Client-sided UI Spoof / Visual Trick)
+local coinsEnabled = false
+CoinsButton.MouseButton1Click:Connect(function()
+	coinsEnabled = not coinsEnabled
+	if coinsEnabled then
+		CoinsButton.Text = "∞ Coins: ON (Click a coin display)"
+		CoinsButton.BackgroundColor3 = Color3.fromRGB(45, 120, 70)
+	else
+		CoinsButton.Text = "∞ Coins: OFF"
+		CoinsButton.BackgroundColor3 = Color3.fromRGB(40, 40, 48)
+	end
+end)
+
+-- Hover highlight and click interception for client-side coin spoofing
+local lastHovered = nil
+local originalColor = nil
+
+RunService.RenderStepped:Connect(function()
+	if not coinsEnabled then 
+		if lastHovered then
+			lastHovered = nil
+		end
+		return 
+	end
+
+	local target = Mouse.Target
+	-- Target must be a TextLabel or TextButton showing numbers/currency
+	if target and (target:IsA("TextLabel") or target:IsA("TextButton")) then
+		if lastHovered ~= target then
+			if lastHovered and lastHovered.Parent then
+				-- Revert old highlight
+			end
+			lastHovered = target
+		end
+		
+		-- Simple hover effect via background color or transparency alteration
+		target.BackgroundColor3 = Color3.fromRGB(255, 215, 0) -- Gold highlight on hover
+		target.BackgroundTransparency = 0.2
+	else
+		if lastHovered then
+			lastHovered = nil
+		end
+	end
+end)
+
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+	if not coinsEnabled then return end
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		local target = Mouse.Target
+		if target and (target:IsA("TextLabel") or target:IsA("TextButton")) then
+			-- Client-side spoof: force text to max/infinite integer value visually
+			target.Text = "999,999,999"
+			
+			-- Try to modify associated ValueObjects if any exist locally inside PlayerGui or Player
+			local success, err = pcall(function()
+				for _, obj in ipairs(LocalPlayer:GetDescendants()) do
+					if obj:IsA("IntValue") or obj:IsA("NumberValue") then
+						local nameLower = obj.Name:lower()
+						if nameLower:find("coin") or nameLower:find("cash") or nameLower:find("money") or nameLower:find("gold") then
+							obj.Value = 999999999
+						end
+					end
+				end
+			end)
 		end
 	end
 end)
